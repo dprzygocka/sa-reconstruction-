@@ -14,3 +14,4 @@ The Zeeguu-API modular architecture allows developers to build on the existing c
 - the database module, 
 - the recommendation module and others. 
 
+link to Zeeguu API repository: https://github.com/zeeguu/api
