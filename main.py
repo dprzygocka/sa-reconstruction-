@@ -4,7 +4,7 @@ from git import Repo
 from pathlib import Path
 import networkx as nx
 import matplotlib.pyplot as plt
-
+from networkx.drawing.nx_agraph import graphviz_layout
 #print where we execute the script
 cwd = os.getcwd()
 
@@ -47,7 +47,7 @@ assert 'zeeguu.core.model.user' == module_name_from_file_path(file_path('zeeguu/
 #lookinto this
 #look at the files only from zeeguu folder
 def include_module(module_name):
-    return module_name.startswith("zeeguu") and not "test" in module_name and not "zeeguu.core.model" == module_name
+    return module_name.startswith("zeeguu") and not "test" in module_name and not "zeeguu.core.model" == module_name and not 'util' in module_name
 
 #DONE
 def import_from_line(line):
@@ -108,8 +108,12 @@ def dependencies_graph():
 
 # a function to draw a graph
 def draw_graph(G, size, **args):
+    pos = graphviz_layout(G, prog='twopi')
     plt.figure(figsize=size)
-    nx.draw(G, **args)
+    if level > 2:
+        nx.draw(G, pos, **args)
+    else:
+         nx.draw(G, **args)
     plt.show()
 
 #G = dependencies_graph()
@@ -140,33 +144,8 @@ def dependencies_digraph():
         for target_module in imports_from_file(file_path):
             if include_module(target_module):
                 G.add_edge(source_module, target_module)
-
     return G
-# Looking at the directed graph, this graph already has labels but try to indetitfy irrelevant modules
 DG = dependencies_digraph()
-#draw_graph(DG, (10,10), with_labels=True)
-
-#remove third party libraries, filter out the modules that are external bc we ar enot intrested in their dependecies
-# 
-# modules which are tests are not intresting
-# 
-# 
-# if there is a lot of incoming dependecies and outcoming dependecies we could investigate why this node is used by some many components
-# 
-# what else can be do to simplify it further?
-# the next step in knowledge inference  by mapping
-# 
-# mapping provided by the developers could be from file names to modules
-# i.e if the file has pages in its name it should be mapped to pages module
-# if it has .vm.map if shlould be mapped to VirtualMapModule etc
-
-
-# different way is to use folder hierarchy for aggregation
-
-
-#size of every package, function that given package computes the size of the package, go through thr files and add them up
-# how to draw it? graph drowing function we can pass dict with nodes and sizes so it draws the correspondingly
-#metrics number fo lines maybe
 
 def top_level_package(module_name, depth=1):
     components = module_name.split(".")
@@ -185,8 +164,8 @@ def abstracted_to_top_level(G, depth=1):
         if src != dst:
             aG.add_edge(src, dst)
     return aG
-
-ADG = abstracted_to_top_level(DG, 7)
+level = 4
+ADG = abstracted_to_top_level(DG, level)
 sizes = []
 colors = []
 for node in ADG.nodes:
@@ -196,4 +175,4 @@ for node in ADG.nodes:
     except KeyError:
         sizes.append(40)
         colors.append('b')
-draw_graph(ADG, (40,40), with_labels=True, node_size=sizes, node_color=colors)
+draw_graph(ADG, (40,40), with_labels=True, node_size=sizes, node_color=colors, font_weight='bold')
