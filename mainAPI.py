@@ -48,8 +48,9 @@ assert 'zeeguu.core.model.user' == module_name_from_file_path(file_path('zeeguu/
 
 #lookinto this
 #look at the files only from zeeguu folder
-def include_module(module_name):
-    return module_name.startswith("zeeguu") and not "test" in module_name and not "zeeguu.core.model" == module_name and not 'util' in module_name
+def include_moduleAPI(module_name):
+    print(module_name)
+    return module_name.startswith("zeeguu.api") and not "test" in module_name and not 'util' in module_name
 
 #DONE
 def import_from_line(line):
@@ -86,66 +87,27 @@ def imports_from_file(file):
     return all_imports
 
 
-# extract dependencies from all files:
-def dependencies_graph():
-    files = Path(CODE_ROOT_FOLDER).rglob("*.py*")
-
-    G = nx.Graph()
-
-    for file in files:
-        file_path = str(file)
-
-        module_name = module_name_from_file_path(file_path)
-
-        if module_name not in G.nodes:
-            G.add_node(module_name)
-
-        for each in imports_from_file(file_path):
-            G.add_edge(module_name, each)
-
-    return G
-
-
 # use Mathplotlib also has support for drawing networks We do a simple drawing of all the files and their dependencies in our system
 
 # a function to draw a graph
 def draw_graph(G, size, **args):
-    pos = graphviz_layout(G, prog='neato')
+    result = {word: '.'.join(word.split(".")[2:]) for word in G.nodes}
+    # only for api or core
+    H = nx.relabel_nodes(G, result)
+    pos = graphviz_layout(H, prog='dot')
     plt.figure(figsize=size)
-    if level == 2:
-        nx.draw(G, pos, with_labels=True, **args)
-        node_sizes = args.get('node_size', None)
-        #label_pos = {}
-        #count = 0
-        #for node, (x, y) in pos.items():
-        #    node_size = node_sizes[0]
-        #    label_pos[node] = (x, y + node_size/1700 + 0.05) 
-        #    count = count+1
-        #nx.draw_networkx_labels(H, pos=label_pos)
-    else:
-        pos = graphviz_layout(G, prog='circo')
-        nx.draw(G, pos=pos, **args)
-        node_sizes = args.get('node_size', None)
-        label_pos = {}
-        count = 0
-        for node, (x, y) in pos.items():
-            node_size = node_sizes[0]
-            label_pos[node] = (x, y) 
-            count = count+1
-        nx.draw_networkx_labels(G, pos=label_pos)
+
+    nx.draw(H, pos, with_labels=True, **args)
     plt.show()
 
 #G = dependencies_graph()
 #draw_graph(G, (12,10), with_labels=False)
 
 def count_lines(target):
-    print(target)
     total_sum = 0
     n_name = module_name_from_file_path(target)
     for key, value in mapNames.items():
-        print(include_module(key))
-        if include_module(key) and key.startswith(n_name):
-            print(key)
+        if include_moduleAPI(key) and key.startswith(n_name):
             total_sum = total_sum + sum([1 for line in open(value)])
 
     return total_sum
@@ -154,7 +116,8 @@ def count_lines(target):
 # is a directed graph (e.g. module A depends on m)
 # with any kinds of graph either directed (nx.DiGraph) or 
 # non-directed (nx.Graph)
-def dependencies_digraph():
+
+def dependencies_digraphAPI():
     files = Path(CODE_ROOT_FOLDER).rglob("*.py*")
 
     G = nx.DiGraph()
@@ -163,18 +126,18 @@ def dependencies_digraph():
         file_path = str(file)
 
         source_module = module_name_from_file_path(file_path)
-        if not include_module(source_module):
+        if not include_moduleAPI(source_module):
             continue
         
         if source_module not in G.nodes:
             G.add_node(source_module)
 
         for target_module in imports_from_file(file_path):
-            if include_module(target_module):
+            if include_moduleAPI(target_module):
                 G.add_edge(source_module, target_module)
     return G
 
-DG = dependencies_digraph()
+DG = dependencies_digraphAPI()
 
 def top_level_package(module_name, depth=1):
     components = module_name.split(".")
@@ -193,7 +156,8 @@ def abstracted_to_top_level(G, depth=1):
         if src != dst:
             aG.add_edge(src, dst)
     return aG
-level = 2
+#start from level 3
+level = 5
 ADG = abstracted_to_top_level(DG, level)
 sizes = []
 colors = []
@@ -208,4 +172,4 @@ for node in ADG.nodes:
     except KeyError:
         sizes.append(40)
         colors.append('b')
-draw_graph(ADG, (10,10), node_size=sizes, node_color=colors, font_weight='bold')
+draw_graph(ADG, (5,5), node_size=sizes, node_color=colors, font_weight='bold')
