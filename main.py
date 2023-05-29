@@ -49,8 +49,7 @@ assert 'zeeguu.core.model.user' == module_name_from_file_path(file_path('zeeguu/
 #lookinto this
 #look at the files only from zeeguu folder
 def include_module(module_name):
-    return module_name.startswith("zeeguu") and not "test" in module_name and not "zeeguu.core.model" == module_name and not 'util' in module_name
-
+    return module_name.startswith("zeeguu") and not "test" in module_name and not "zeeguu.core.model" in module_name and not 'util' in module_name
 #DONE
 def import_from_line(line):
     try: 
@@ -109,10 +108,15 @@ def dependencies_graph():
 # use Mathplotlib also has support for drawing networks We do a simple drawing of all the files and their dependencies in our system
 
 # a function to draw a graph
-def draw_graph(G, size, **args):
+def draw_graph(H, size, **args):
+    result = {word: '.'.join(word.split(".")[1:]) for word in H.nodes if len(word.split(".")) > 1}
+    # only for api or core
+    G = nx.relabel_nodes(H, result)
     pos = graphviz_layout(G, prog='neato')
+    #pos = nx.spring_layout(G, k=0.01)
+
     plt.figure(figsize=size)
-    if level == 2:
+    if level > 2:
         nx.draw(G, pos, with_labels=True, **args)
         node_sizes = args.get('node_size', None)
         #label_pos = {}
@@ -123,7 +127,7 @@ def draw_graph(G, size, **args):
         #    count = count+1
         #nx.draw_networkx_labels(H, pos=label_pos)
     else:
-        pos = graphviz_layout(G, prog='circo')
+        pos = graphviz_layout(G, prog='dot')
         nx.draw(G, pos=pos, **args)
         node_sizes = args.get('node_size', None)
         label_pos = {}
@@ -139,15 +143,12 @@ def draw_graph(G, size, **args):
 #draw_graph(G, (12,10), with_labels=False)
 
 def count_lines(target):
-    print(target)
     total_sum = 0
     n_name = module_name_from_file_path(target)
     for key, value in mapNames.items():
         print(include_module(key))
         if include_module(key) and key.startswith(n_name):
-            print(key)
             total_sum = total_sum + sum([1 for line in open(value)])
-
     return total_sum
 
 # However, if we think a bit more about it, we realize tat a dependency graph 
@@ -193,7 +194,7 @@ def abstracted_to_top_level(G, depth=1):
         if src != dst:
             aG.add_edge(src, dst)
     return aG
-level = 2
+level = 3
 ADG = abstracted_to_top_level(DG, level)
 sizes = []
 colors = []

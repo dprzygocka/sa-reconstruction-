@@ -49,11 +49,7 @@ assert 'zeeguu.core.model.user' == module_name_from_file_path(file_path('zeeguu/
 #lookinto this
 #look at the files only from zeeguu folder
 def include_moduleCore(module_name):
-    return module_name.startswith("zeeguu.core") and not "zeeguu.core.model" in module_name and not "test" in module_name and not 'util' in module_name
-
-#look at the files only from zeeguu folder
-def include_moduleCore(module_name):
-    return module_name.startswith("zeeguu.core") and not "zeeguu.core.model" in module_name and not "test" in module_name and not 'util' in module_name and not 'zeeguu.core.exercises' == module_name and not 'zeeguu.core.definition_of learned' == module_name and not 'zeeguu.core.word_stats' == module_name
+    return module_name.startswith("zeeguu.core") and not "test" in module_name and not 'util' in module_name and not 'core.exercises' in module_name and not 'core.reading_analysis' in module_name
 
 #DONE
 def import_from_line(line):
@@ -97,10 +93,31 @@ def draw_graph(G, size, **args):
     result = {word: '.'.join(word.split(".")[1:]) for word in G.nodes}
     # only for api or core
     H = nx.relabel_nodes(G, result)
-    pos = graphviz_layout(H, prog='neato')
+    pos = graphviz_layout(H, prog='sfdp')
+    new_pos = {}
+    for node, (x, y) in pos.items():
+        if node == 'core.content_retriever':
+            new_pos[node] = (132, 155)
+        if node == 'core.language':
+            new_pos[node] = (x-5, y - 25)
+        if node == 'core.content_recommender':
+            new_pos[node] = (x-5, y)
+        if node == 'core.constants':
+            print(node)
+            new_pos[node] = (108, 136)
+        if node == 'core.user_activity_hooks':
+            print(node)
+            new_pos[node] = (183, 15)
+        if node == 'core.emailer':
+            print(node)
+            new_pos[node] = (223, 32)
+        if node == 'core.account_management':
+            new_pos[node] = (211, 57)
+        else:
+            new_pos[node] = (x, y)
     plt.figure(figsize=size)
     if level > 2:
-        nx.draw(H, pos, with_labels=True, **args)
+        nx.draw(H, new_pos, with_labels=True, **args)
         node_sizes = args.get('node_size', None)
         print(node_sizes)
         label_pos = {}
@@ -114,7 +131,7 @@ def draw_graph(G, size, **args):
             count = count+1
         #nx.draw_networkx_labels(H, pos=label_pos)
     else:
-        pos = nx.spring_layout(G, k=0.5)
+        pos = nx.spring_layout(G, k=0.7)
         nx.draw(G, pos=pos,font_weight='bold', **args)
         node_sizes = args.get('node_size', None)
         label_pos = {}
@@ -180,7 +197,7 @@ def abstracted_to_top_level(G, depth=1):
         if src != dst:
             aG.add_edge(src, dst)
     return aG
-level = 4
+level = 3
 ADG = abstracted_to_top_level(DG, level)
 sizes = []
 colors = []

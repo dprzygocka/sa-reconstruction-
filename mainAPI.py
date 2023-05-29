@@ -49,7 +49,6 @@ assert 'zeeguu.core.model.user' == module_name_from_file_path(file_path('zeeguu/
 #lookinto this
 #look at the files only from zeeguu folder
 def include_moduleAPI(module_name):
-    print(module_name)
     return module_name.startswith("zeeguu.api") and not "test" in module_name and not 'util' in module_name
 
 #DONE
@@ -83,6 +82,8 @@ def imports_from_file(file):
     for line in lines:
         imp = import_from_line(line)
         if imp:
+            if imp == ".":
+               all_imports.append('zeeguu.api.api') 
             all_imports.append(imp)
     return all_imports
 
@@ -94,7 +95,7 @@ def draw_graph(G, size, **args):
     result = {word: '.'.join(word.split(".")[2:]) for word in G.nodes}
     # only for api or core
     H = nx.relabel_nodes(G, result)
-    pos = graphviz_layout(H, prog='dot')
+    pos = graphviz_layout(H, prog='fdp')
     plt.figure(figsize=size)
 
     nx.draw(H, pos, with_labels=True, **args)
@@ -131,7 +132,6 @@ def dependencies_digraphAPI():
         
         if source_module not in G.nodes:
             G.add_node(source_module)
-
         for target_module in imports_from_file(file_path):
             if include_moduleAPI(target_module):
                 G.add_edge(source_module, target_module)
@@ -157,7 +157,7 @@ def abstracted_to_top_level(G, depth=1):
             aG.add_edge(src, dst)
     return aG
 #start from level 3
-level = 5
+level = 6
 ADG = abstracted_to_top_level(DG, level)
 sizes = []
 colors = []
